@@ -1,9 +1,3 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[27]:
-
-
 import torch
 if torch.cuda.is_available():
   device = torch.device('cuda:0')
@@ -11,10 +5,6 @@ else:
   device = 'cpu'
 
 print(device)
-
-
-# In[28]:
-
 
 import torch.nn as nn
 import numpy as np
@@ -51,20 +41,12 @@ def make_discriminator_network(input_size,
   model.add_module(f'sigmoid_d', nn.Sigmoid())
   return model
 
-
-# In[29]:
-
-
 image_size = (28, 28)
 z_size = 20
 gen_hidden_layers = 1
 gen_hidden_size = 100
 disc_hidden_layers = 1
 disc_hidden_size = 100
-
-
-# In[30]:
-
 
 torch.manual_seed(0)
 gen_model = make_generator_network(input_size=z_size,
@@ -74,20 +56,12 @@ gen_model = make_generator_network(input_size=z_size,
                                    ).to(device)
 print(gen_model)
 
-
-# In[31]:
-
-
 disc_model = make_discriminator_network(input_size=np.prod(image_size),
                                         num_hidden_layers=disc_hidden_layers,
                                         num_hidden_units=disc_hidden_size,
                                         num_output_units=1
                                         ).to(device)
 print(disc_model)
-
-
-# In[32]:
-
 
 import torchvision
 from torchvision import transforms
@@ -102,10 +76,6 @@ fashion_mnist_dataset = torchvision.datasets.FashionMNIST(
     transform=transform, download=True
 )
 
-
-# In[33]:
-
-
 fig, ax = plt.subplots(nrows=2, ncols=5,
                       sharex=True, sharey=True,
                       figsize=(15,6))
@@ -116,10 +86,6 @@ for i in range(10):
   image = fashion_mnist_dataset[i][0].reshape(*image_size, 1)
   ax[i].imshow((image+1)/2.0, cmap='Grays')
 
-
-# In[34]:
-
-
 def create_z(batch_size, z_size, mode_z):
   if mode_z == 'uniform':
     input_z = torch.rand(batch_size, z_size)*2 - 1
@@ -127,26 +93,14 @@ def create_z(batch_size, z_size, mode_z):
     input_z = torch.randn(batch_size, z_size)
   return input_z
 
-
-# In[35]:
-
-
 from torch.utils.data import DataLoader
 batch_size = 64
 fashion_mnist_dl = DataLoader(fashion_mnist_dataset, batch_size,
                         shuffle=True, drop_last=True)
 
-
-# In[36]:
-
-
 loss_fn = nn.BCELoss()
 g_optimizer = torch.optim.Adam(gen_model.parameters(), lr=0.001)
 d_optimizer = torch.optim.Adam(disc_model.parameters(), lr=0.001)
-
-
-# In[37]:
-
 
 def d_train(x):
   disc_model.zero_grad()
@@ -169,10 +123,6 @@ def d_train(x):
 
   return d_loss.data.item(), d_prob_real.detach(), d_prob_fake.detach()
 
-
-# In[38]:
-
-
 def g_train(x):
   gen_model.zero_grad()
 
@@ -189,19 +139,11 @@ def g_train(x):
 
   return g_loss.data.item()
 
-
-# In[39]:
-
-
 def create_samples(gen_model, input_z):
   batch_size = input_z.size(0)
   gen_output = gen_model(input_z)
   images = torch.reshape(gen_output, (batch_size, *image_size))
   return (images+1)/2.0
-
-
-# In[40]:
-
 
 epoch_samples = []
 all_d_losses = []
@@ -239,10 +181,6 @@ for epoch in range(1, num_epochs+1):
         create_samples(gen_model, fixed_input_z).detach().cpu().numpy()
     )
 
-
-# In[44]:
-
-
 fig = plt.figure(figsize=(15,6))
 ax = fig.add_subplot(1, 2, 1)
 plt.plot(all_g_losses, label='Generator losses')
@@ -258,14 +196,11 @@ plt.plot(all_d_fake, label='Fake: D(G(z))')
 plt.legend()
 plt.grid()
 ax.set_xlabel('Iteration')
-ax.set_ylabel('Discriminator output')
+ax.set_ylabel('Discriminator output');
 
-
-# In[54]:
-
-
+stages = np.linspace(log, num_epochs, log).astype(int)
 n_stages = num_epochs // log
-fig = plt.figure(figsize=(9, 15))
+fig = plt.figure(figsize=(7, 15))
 for i in range(n_stages):
   for j in range(5):
     ax = fig.add_subplot(n_stages, 5, i*5+j+1)
@@ -273,4 +208,12 @@ for i in range(n_stages):
     ax.set_yticks([])
     image = epoch_samples[i][j]
     ax.imshow(image, cmap='Grays')
+    if j == 0:
+      ax.text(
+          -0.06, 0.5, f'Epoch {stages[i]}',
+          rotation=90, size=10, color='red',
+          horizontalalignment='right',
+          verticalalignment='center',
+          transform=ax.transAxes
+      )
 
